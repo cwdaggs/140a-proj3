@@ -60,7 +60,7 @@ Keep length in mind
 
 )
 
-(defun determine_if_asterisks (test_string index)
+(defun determine_if_asterisks (test_string (index 0))
 	(cond
 		; Reached end of string and no asterisks
 		((char= (char test_string index) nil) nil)
@@ -71,6 +71,14 @@ Keep length in mind
 	)
 )
 
-(defun asterisk (asterisk_string test_string)
-	
+;asterisk string comes from pattern, test_string comes from match
+(defun asterisk (asterisk_string test_string (index 0))
+	(cond
+		; Reached end of string and no asterisks
+		((char= (char test_string index) nil) nil)
+		; Proceeds to next char
+		((char/= (char test_string index) '*) (determine_if_asterisks test_string (+ index 1)))
+		; Contains asterisk and returns true
+		((char= (char test_string index) '*) t)
+	)
 )
