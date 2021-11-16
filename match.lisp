@@ -16,48 +16,35 @@ Case: If last two items are ! and a word, look for latest placement of the word
 Otherwise, find the first placement
 Keep length in mind
 |#
-
-(defun match (pattern match)
-	; This is just to show that it works when there's no quotations
+(defun exclamation (pattern assertion)
 	; (print (car pattern))
-	; (print (car match))
+	; (print (car assertion))
 	(cond
-		; got successfully through whole thing
-		((and (endp pattern) (endp match)) t)
-		; ! at end of pattern so return t
-		((and (string= (first pattern) "!") (= (length pattern) 1)) t)
-		; end of pattern = ! string/!/*
-		((and (string= (first pattern) "!") (= (length pattern) 2)) (exclamation (nth 1 (pattern)) (rev (cdr match))))
-		; Two subsequent !s, in which the first one will not matter
-		((and (string= (first pattern) "!") (string= (nth 1 (pattern)) "!")) (match (cdr pattern) match))
-		; Normal asterisk checking
-
-		; Asterisk checking if standing alone
-
-		; Asterisk checking if ! near
-
-		; Normal ! checking
-		((string= (first pattern) "!") (exclamation (nth 1 (pattern)) (cdr match)))
-		; Normal checking of strings, recurses to next place in both lists
-		((string= (first pattern) (first match)) (match (cdr pattern) (cdr match)))
-		; If strings not equal in normal check, returns nil
-		((not (string= (first pattern) (first match))) nil)
+		((string= (first pattern) (first assertion)) (match (cdr pattern) (cdr assertion)))
+		((string/= (first pattern) (first assertion)) (exclamation pattern (cdr assertion)))
+	
 	)
-
 )
-; (print (match '(apple2 banana) '(apple2 banana)))
 
-; Test cases
-(print (match '(color apple red) '(color apple red))) ;t
-(print (match '(color apple red) '(color apple green))) ;nil
+(defun rev (lis)
+;;; REV
+;;; inputs: lis, a list
+;;; outputs: a list with elements in reverse order
+;;;
+	(rev_helper lis NIL)
+)
 
-(print (match '(this table !) '(this table supports a bloc))) ;t
 
 
-; Have helper for asterisk, so like if statement in match
-; Have helper for exclamation
-(defun exclamation (second_word match)
-
+(defun rev_helper (lis1 lis2)
+;;; REV_HELPER
+;;; inputs: lis1, list; lis2, list
+;;; output: the result of consing the elements of lis1 onto lis2 in reverse order
+;;;
+	(if lis1
+		(rev_helper (cdr lis1) (cons (car lis1) lis2))
+		lis2
+	)
 )
 
 (defun determine_if_asterisks (test_string (index 0))
@@ -82,3 +69,49 @@ Keep length in mind
 		((char= (char test_string index) '*) t)
 	)
 )
+
+
+(defun match (pattern assertion)
+	; This is just to show that it works when there's no quotations
+	; (print (car pattern))
+	; (print (car assertion))
+	(cond
+		; got successfully through whole thing
+		((and (endp pattern) (endp assertion)) t)
+		; ! at end of pattern so return t
+		((and (string= (first pattern) "!") (= (length pattern) 1)) t)
+		; end of pattern = ! string/!/*
+		((and (string= (first pattern) "!") (= (length pattern) 2)) (exclamation (cdr pattern) (rev assertion)))
+		; Two subsequent !s, in which the first one will not matter
+		((and (string= (first pattern) "!") (string= (nth 1 pattern) "!")) (match (cdr pattern) assertion))
+		; Normal asterisk checking
+
+		; Asterisk checking if standing alone
+
+		; Asterisk checking if ! near
+
+		; Normal ! checking
+		; ((string= (first pattern) "!") (print 'Here))
+		((string= (first pattern) "!") (exclamation (cdr pattern) assertion))
+		; Normal checking of strings, recurses to next place in both lists
+		((string= (first pattern) (first assertion)) (match (cdr pattern) (cdr assertion)))
+		; If strings not equal in normal check, returns nil
+		((string/= (first pattern) (first assertion)) nil)
+	)
+
+)
+; (print (match '(apple2 banana) '(apple2 banana)))
+
+; Test cases
+(print (match '(color apple red) '(color apple red))) ;t
+(print (match '(color apple red) '(color apple green))) ;nil
+(print (match '(! table !) '(this table supports a bloc))) ;t
+(print (match '(this table !) '(this table supports a bloc))) ;t
+(print (match '(! brown) '(green red brown yellow))) ;nil
+(print (match '(! brown) '(green red brown brown))) ;t
+(print (match '(red green ! blue) '(red green blue))) ;t
+
+; Have helper for asterisk, so like if statement in match
+; Have helper for exclamation
+
+
