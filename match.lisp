@@ -16,15 +16,39 @@ Case: If last two items are ! and a word, look for latest placement of the word
 Otherwise, find the first placement
 Keep length in mind
 |#
-(defun exclamation (pattern assertion)
+(defun exclamation (pattern assertion &optional (reverse nil))
 	; (print (car pattern))
 	; (print (car assertion))
 	; add boolean with default value, change if inputting reverse list, should only be one check to see if last elements are equal
 	(cond
+		((and (string= (first pattern) (first assertion)) (equal reverse t)) t)
+		((and (string/= (first pattern) (first assertion)) (equal reverse t)) nil)
 		((string= (first pattern) (first assertion)) (match (cdr pattern) (cdr assertion)))
 		((string/= (first pattern) (first assertion)) (exclamation pattern (cdr assertion)))
 	
 	)
+)
+
+(defun get_list_between_excl (pattern partial_pattern)
+	(cond
+		((string= (first pattern) "!") partial_pattern)
+		((string/= (first pattern) "!") (get_list_between_excl ((cdr pattern) (cons (car pattern) partial_pattern))))
+	)
+)
+; maybe have pattern doing the same thing just so match can be called afterwards again
+(defun check_list (partial_pattern assertion)
+	(cond
+		; Successfully got through whole partial pattern, match?
+		((endp partial_pattern) t)
+		; If assertion < partial pattern, never found a match
+		((< (length assertion) (length partial_pattern)) nil)
+		; First strings of both match so go to next of both
+		((string= (first partial_pattern) (first assertion)) (check_list (cdr partial_pattern) (cdr assertion)))
+		; First strings not equal so escape back to either end or restart with statement below, moving assertion ahead
+		((string/= (first partial_pattern) (first assertion)) nil)
+		((and (>= (length assertion) (length partial_pattern)) nil) (check_list partial_pattern (cdr assertion)))
+	)
+
 )
 
 (defun rev (lis)
@@ -81,8 +105,8 @@ Keep length in mind
 		((and (endp pattern) (endp assertion)) t)
 		; ! at end of pattern so return t
 		((and (string= (first pattern) "!") (= (length pattern) 1)) t)
-		; end of pattern = ! string/!/*
-		((and (string= (first pattern) "!") (= (length pattern) 2)) (exclamation (cdr pattern) (rev assertion)))
+		; end of pattern = ! string/!/*, change to last being not ! and not *
+		((and (string= (first pattern) "!") (= (length pattern) 2)) (exclamation (cdr pattern) (rev assertion) t))
 		; Two subsequent !s, in which the first one will not matter
 		((and (string= (first pattern) "!") (string= (nth 1 pattern) "!")) (match (cdr pattern) assertion))
 		; Normal asterisk checking
@@ -92,7 +116,6 @@ Keep length in mind
 		; Asterisk checking if ! near
 
 		; Normal ! checking
-		; ((string= (first pattern) "!") (print 'Here))
 		((string= (first pattern) "!") (exclamation (cdr pattern) assertion))
 		; Normal checking of strings, recurses to next place in both lists
 		((string= (first pattern) (first assertion)) (match (cdr pattern) (cdr assertion)))
@@ -111,7 +134,16 @@ Keep length in mind
 (print (match '(! brown) '(green red brown yellow))) ;nil
 (print (match '(! brown) '(green red brown brown))) ;t
 (print (match '(red green ! blue) '(red green blue))) ;t
+; (print (match '(red gr*n blue) '(red green blue))) ; t
+; (print (match '(t* table is *n) '(this table is blue))) ; nil
+; (print (match '(color apple *) '(color apple red))) ;t
+; (print (match '(color * red) '(color apple red))) ;t
+; (print (match '(color * red) '(color apple green))) ;nil
+; (print (match '(color*red) '(color apple red)) ;nil
+; (print (match '(color ! * red) '(color apple red))) ;t
+(print (match '(! table orange !) '(this table is table orange rock))) ;t
 
+; (print (find 'table '(this table is table orange rock)))
 ; Have helper for asterisk, so like if statement in match
 ; Have helper for exclamation
 
