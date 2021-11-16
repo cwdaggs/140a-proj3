@@ -19,6 +19,7 @@ Keep length in mind
 (defun exclamation (pattern assertion)
 	; (print (car pattern))
 	; (print (car assertion))
+	; add boolean with default value, change if inputting reverse list, should only be one check to see if last elements are equal
 	(cond
 		((string= (first pattern) (first assertion)) (match (cdr pattern) (cdr assertion)))
 		((string/= (first pattern) (first assertion)) (exclamation pattern (cdr assertion)))
