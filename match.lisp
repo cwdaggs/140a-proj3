@@ -47,6 +47,14 @@
 	)
 )
 
+(defun pure_asterisks (pattern &optional (index 0))
+	(cond
+		((eql index (length pattern)) t)
+		((char= (char pattern index) #\*) (pure_asterisks pattern (+ index 1)))
+		((char/= (char pattern index) #\*) nil)
+	)
+)
+
 ;asterisk string comes from pattern, test_string comes from assertion
 (defun asterisk (pattern assertion &optional (index 0) (assert_index 0))
 	; (print 50)
@@ -127,8 +135,8 @@
 		; Asterisk checking if ! near, might get rid of this
 		((and (string= (first pattern) "!") (string= (nth 1 pattern) "*")) (match (cdr pattern) assertion))
 		; Asterisk checking if standing alone
-		((and (string= (first pattern) "*") (not (null assertion))) (match (cdr pattern) (cdr assertion)))
-		((and (string= (first pattern) "*") (null assertion)) nil)
+		((and (pure_asterisks (string (first pattern))) (not (null assertion))) (match (cdr pattern) (cdr assertion)))
+		((and (pure_asterisks (string (first pattern))) (null assertion)) nil)
 		; Normal asterisk checking
 		((eql (determine_if_asterisks (first pattern)) t) 
 			(if (asterisk (string (first pattern)) (string (first assertion)))
@@ -192,7 +200,7 @@
 
 ;;;Failing
 ; (print (match '(! ! * benson * ! ! *) '(hamburger delta there benson is is))) ;t
-; (print (match '(* **) '(c))) ;nil ----
+
 
 ;;;* cases
 ; (print (match '(color*rred) '(colorrrred))) ;t
@@ -234,3 +242,4 @@
 
 ; (print (match '(color**red) '(color))) ;nil
 ; (print (match '(**pp**color**) '(colorr))) ;nil
+; (print (match '(* **) '(c))) ;nil
