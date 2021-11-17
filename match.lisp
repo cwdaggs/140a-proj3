@@ -86,6 +86,8 @@
 	; (print assert_index_dup)
 	(cond
 		((and (eql index (length pattern)) (eql assert_index (length assertion))) (asterisk pattern assertion index assert_index))
+		((and (not (eql index (length pattern))) (eql assert_index (length assertion))) (asterisk pattern assertion index assert_index))
+
 		; ((char= (char pattern index) (char pattern (+ index 1))) (asterisk_helper pattern assertion (+ index 1) assert_index))
 		((and (and (eql (+ index 1) (length pattern)) (not (eql (+ assert_index 1) (length assertion)))) (char= (char pattern index) (char assertion assert_index))) 
 		(asterisk_helper pattern assertion index index_dup (+ assert_index 1) assert_index_dup))
@@ -186,10 +188,11 @@
 ; (print (match '(cone old lock odor rock ! rock rock egg dead) '(cone old lock odor rock rock rock rock egg dead))) ;t
 ; (print (match '(cone old lock odor rock ! ! ! rock egg ! ! ! dead rock egg) '(cone old lock odor rock rock egg big big rock egg big big king egg big big cone dead rock egg))) ;t
 ; (print (match '(! rock ! table) '(bark roar rock table table table))) ;t
+; (print (match '(color ! **a*ple red) '(color apple red))) ;t
 
 ;;;Failing
 ; (print (match '(! ! * benson * ! ! *) '(hamburger delta there benson is is))) ;t
-; (print (match '(color ! **a*ple red) '(color apple red))) ;t
+; (print (match '(* **) '(c))) ;nil ----
 
 ;;;* cases
 ; (print (match '(color*rred) '(colorrrred))) ;t
@@ -215,7 +218,7 @@
 ; (print (match '(*****) '(a))) ;t
 ; (print (match '(*** **) '(a c))) ;t
 
-(print (match '(color*rred) '(colorcrrrcd))) ;nil
+; (print (match '(color*rred) '(colorcrrrcd))) ;nil
 ; (print (match '(color***re***d) '(colorbbbcdre))) ;nil
 ; (print (match '(color***re***dre) '(colorbbbcdre))) ;nil
 ; (print (match '(color*re) '(colorredbe))) ;nil 
@@ -231,4 +234,3 @@
 
 ; (print (match '(color**red) '(color))) ;nil
 ; (print (match '(**pp**color**) '(colorr))) ;nil
-; (print (match '(* **) '(c))) ;nil ----
