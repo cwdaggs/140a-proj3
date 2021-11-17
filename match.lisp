@@ -1,60 +1,3 @@
-#|use reverse list?
-car of list = !, then recurse using element after ! and cdr rest of list
-Make helper function
-Pattern can contain the special chars, match is the actual list of all strings
-
-Two cases for *?
-all by itself, in which it replaces one word
-in a word, in which need to look at the characters
-
-Cases for !
-End of pattern
-Randomly in pattern with one word after
-Randomly in pattern with multiple words after
-Replaces no, 1, many words
-Case: If last two items are ! and a word, look for latest placement of the word
-Otherwise, find the first placement
-Keep length in mind
-|#
-(defun exclamation (pattern assertion &optional (reverse nil))
-	; (print (car pattern))
-	; (print (car assertion))
-	; add boolean with default value, change if inputting reverse list, should only be one check to see if last elements are equal
-	(cond
-		((and (string= (first pattern) (first assertion)) (equal reverse t)) t)
-		((and (string/= (first pattern) (first assertion)) (equal reverse t)) nil)
-		((string= (first pattern) (first assertion)) (match (cdr pattern) (cdr assertion)))
-		((string/= (first pattern) (first assertion)) (exclamation pattern (cdr assertion)))
-	
-	)
-)
-
-; (defun get_list_between_excl (pattern partial_pattern)
-; 	; (print (first pattern))
-; 	; (print partial_pattern)
-; 	(cond
-; 		; Encounters next !
-; 		((string= (first pattern) "!") partial_pattern)
-; 		((string/= (first pattern) "!") (get_list_between_excl (cdr pattern) (append partial_pattern (list (car pattern)))))
-; 	)
-; )
-; maybe have pattern doing the same thing just so match can be called afterwards again
-; (defun check_list (pattern pattern_dup partial_pattern partial_dup assertion assertion_dup)
-; 	(print partial_pattern)
-; 	(cond
-; 		; Successfully got through whole partial pattern, match?
-; 		((endp partial_pattern) (match (pattern assertion)))
-; 		; If assertion < partial pattern, never found a match
-; 		((< (length assertion) (length partial_pattern)) nil)
-; 		; First strings of both match so go to next of both
-; 		((string= (first partial_pattern) (first assertion)) (check_list (cdr pattern) pattern_dup (cdr partial_pattern) partial_dup (cdr assertion) assertion_dup))
-; 		; First strings not equal so escape back to either end or restart with statement below, moving assertion ahead
-; 		; ((string/= (first partial_pattern) (first assertion)) nil)
-; 		; and (>= (length assertion) (length partial_pattern))
-; 		((string/= (first partial_pattern) (first assertion)) (check_list pattern_dup pattern_dup partial_dup partial_dup (cdr assertion_dup) assertion_dup))
-; 	)
-
-; )
 
 (defun assertion_check (pattern assertion assertion_dup)
 	; (print 2)
@@ -62,7 +5,7 @@ Keep length in mind
 	; (print assertion)
 	; (print assertion_dup)
 	(cond
-		((null assertion) (match pattern assertion_dup))
+		((endp assertion) (match pattern assertion_dup))
 		((string/= (first pattern) (first assertion)) (assertion_check pattern (cdr assertion) assertion_dup))
 		((string= (first pattern) (first assertion)) (assertion_check pattern (cdr assertion) assertion))
 		; ((and (<= (length pattern) (length assertion))(string= (first pattern) (first assertion))) (assertion_check pattern (cdr assertion) assertion))
@@ -70,46 +13,48 @@ Keep length in mind
 )
 
 (defun rev (lis)
-;;; REV
-;;; inputs: lis, a list
-;;; outputs: a list with elements in reverse order
-;;;
 	(rev_helper lis NIL)
 )
 
-
-
 (defun rev_helper (lis1 lis2)
-;;; REV_HELPER
-;;; inputs: lis1, list; lis2, list
-;;; output: the result of consing the elements of lis1 onto lis2 in reverse order
-;;;
 	(if lis1
 		(rev_helper (cdr lis1) (cons (car lis1) lis2))
 		lis2
 	)
 )
 
-(defun determine_if_asterisks (test_string (index 0))
-	(cond
-		; Reached end of string and no asterisks
-		((char= (char test_string index) nil) nil)
-		; Proceeds to next char
-		((char/= (char test_string index) '*) (determine_if_asterisks test_string (+ index 1)))
-		; Contains asterisk and returns true
-		((char= (char test_string index) '*) t)
+(defun determine_if_asterisks (test_string)
+	; (print 4)
+	(if (find #\* (string test_string))
+		t
+		nil
 	)
 )
 
-;asterisk string comes from pattern, test_string comes from match
-(defun asterisk (asterisk_string test_string (index 0))
+;asterisk string comes from pattern, test_string comes from assertion
+(defun asterisk (pattern assertion &optional (index 0) (assert_index 0))
+	; (print 5)
 	(cond
-		; Reached end of string and no asterisks
-		((char= (char test_string index) nil) nil)
-		; Proceeds to next char
-		((char/= (char test_string index) '*) (determine_if_asterisks test_string (+ index 1)))
-		; Contains asterisk and returns true
-		((char= (char test_string index) '*) t)
+		; pattern string ends with * i.e. x*, return t since they match
+		((eql index (length pattern)) t)
+		((eql assert_index (length assertion)) nil)
+		((and (char= (char pattern index) #\*) (eql index (- (length pattern) 1))) t)
+		; equivalent chars so go next
+		((char= (char pattern index) (char assertion assert_index)) (asterisk pattern assertion (+ index 1) (+ assert_index 1)))
+		; two subsequent *s so go next NEED TWO INDEXES?
+		((and (char= (char pattern index) #\*) (char= (char pattern (+ index 1)) #\*)) (asterisk pattern assertion (+ index 1) assert_index))
+		; char is * so helper function?
+		((char= (char pattern index) #\*) (asterisk_helper pattern (char pattern (+ index 1)) assertion (+ index 1) assert_index))
+		((char/= (char pattern index) (char assertion assert_index)) nil)
+	)
+)
+
+(defun asterisk_helper (pattern pattern_char assertion index assert_index)
+	; (print 6)
+	(cond
+		((eql assert_index (length assertion)) nil)
+		((char= pattern_char (char assertion assert_index)) (asterisk pattern assertion (+ index 1) (+ assert_index 1)))
+		((char/= pattern_char (char assertion assert_index)) (asterisk_helper pattern pattern_char assertion index (+ assert_index 1)))
 	)
 )
 
@@ -128,14 +73,17 @@ Keep length in mind
 		; ((and (string= (first pattern) "!") (= (length pattern) 2)) (exclamation (cdr pattern) (rev assertion) t))
 		; Two subsequent !s, in which the first one will not matter
 		((and (string= (first pattern) "!") (string= (nth 1 pattern) "!")) (match (cdr pattern) assertion))
-		; Normal asterisk checking
-
+		; Asterisk checking if ! near, might get rid of this
+		((and (string= (first pattern) "!") (string= (nth 1 pattern) "*")) (match (cdr pattern) assertion))
 		; Asterisk checking if standing alone
-
-		; Asterisk checking if ! near
-
+		((and (string= (first pattern) "*") (not (null assertion))) (match (cdr pattern) (cdr assertion)))
+		; Normal asterisk checking
+		((eql (determine_if_asterisks (first pattern)) t) 
+			(if (asterisk (string (first pattern)) (string (first assertion)))
+				(match (cdr pattern) (cdr assertion))
+				nil
+			))
 		; Normal ! checking
-		; ((string= (first pattern) "!") (check_list pattern pattern (get_list_between_excl (cdr pattern) (append)) (get_list_between_excl (cdr pattern) (append)) assertion assertion))
 		((string= (first pattern) "!") (assertion_check (cdr pattern) assertion assertion))
 		; Normal checking of strings, recurses to next place in both lists
 		((string= (first pattern) (first assertion)) (match (cdr pattern) (cdr assertion)))
@@ -147,23 +95,41 @@ Keep length in mind
 ; (print (match '(apple2 banana) '(apple2 banana)))
 
 ; Test cases
-(print (match '(color apple red) '(color apple red))) ;t
-(print (match '(color apple red) '(color apple green))) ;nil
-(print (match '(! table !) '(this table supports a bloc))) ;t
-(print (match '(this table !) '(this table supports a bloc))) ;t
-(print (match '(! brown) '(green red brown yellow))) ;nil
-(print (match '(! brown) '(green red brown brown))) ;t
-(print (match '(red green ! blue) '(red green blue))) ;t
-; ; (print (match '(red gr*n blue) '(red green blue))) ; t
-; ; (print (match '(t* table is *n) '(this table is blue))) ; nil
-; ; (print (match '(color apple *) '(color apple red))) ;t
-; ; (print (match '(color * red) '(color apple red))) ;t
-; ; (print (match '(color * red) '(color apple green))) ;nil
-; ; (print (match '(color*red) '(color apple red)) ;nil
-; ; (print (match '(color ! * red) '(color apple red))) ;t
-(print (match '(! table orange !) '(this table is table orange rock))) ;t
-(print (match '(! table orange) '(this table is table orange table orange))) ;t
-(print (match '(! table orange) '(this table is table orange table))) ;nil
-(print (match '(! bear bear) '(bear bear bear bear bear))) ;t
+;;;Passing
+; (print (match '(color apple red) '(color apple red))) ;t
+; (print (match '(color apple red) '(color apple green))) ;nil
+; (print (match '(! table !) '(this table supports a bloc))) ;t
+; (print (match '(this table !) '(this table supports a bloc))) ;t
+; (print (match '(! brown) '(green red brown yellow))) ;nil
+; (print (match '(! brown) '(green red brown brown))) ;t
+; (print (match '(red green ! blue) '(red green blue))) ;t
+; (print (match '(! table orange !) '(this table is table orange rock))) ;t
+; (print (match '(! table orange) '(this table is table orange table orange))) ;t
+; (print (match '(! table orange) '(this table is table orange table))) ;nil
+; (print (match '(color ! * red) '(color apple red))) ;t
+; (print (match '(color apple *) '(color apple red))) ;t
+; (print (match '(color * red) '(color apple red))) ;t
+; (print (match '(color * red) '(color apple green))) ;nil
+; (print (match '(! ! ! apple ! ! ! hotdog ! ! ! bruh) '(apple hotdog))) ;nil
+; (print (match '(! ! ! apple ! ! ! hotdog ! ! ! bruh) '(apple hotdog bruh))) ;t
+; (print (match '(! ! ! apple ! ! ! hotdog ! ! ! bruh) '(some random stuff apple oh no hotdog pineapple bruh))) ;t
+; (print (match '(! ! ! apple ! ! ! hotdog ! ! ! bruh) '(some random stuff apple oh no hotdog pineapple bruh burple nurples))) ;nil
+; (print (match '(! ! * benson * ! ! *) '(hamburger delta there benson is))) ;nil
+; (print (match '() '())) ;t
+; (print (match '(*) '())) ;nil
+; (print (match '(!) '())) ;t
+; (print (match '(! ! *) '())) ;nil
+; (print (match '(! ! * ! * ! ! *) '())) ;nil
 ; (print (match '(apple2 ! bananas !) '(apple2 apple plum bananas))) ;t
+; (print (match '(color*red) '(color apple red))) ;nil
+; (print (match '(red gr*n blue) '(red green blue))) ; t
+; (print (match '(t* table is *n) '(this table is blue))) ; nil
+; (print (match '(** ****** * *) '(i am a pirate))) ;t
+
+
+;;;Failing
+; (print (match '(! bear bear) '(bear bear bear bear bear))) ;t
+; (print (match '(! ! * benson * ! ! *) '(hamburger delta there benson is is))) ;t
+
+
 
