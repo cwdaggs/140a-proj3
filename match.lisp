@@ -30,23 +30,28 @@ Keep length in mind
 )
 
 (defun get_list_between_excl (pattern partial_pattern)
+	; (print (first pattern))
+	; (print partial_pattern)
 	(cond
+		; Encounters next !
 		((string= (first pattern) "!") partial_pattern)
-		((string/= (first pattern) "!") (get_list_between_excl ((cdr pattern) (cons (car pattern) partial_pattern))))
+		((string/= (first pattern) "!") (get_list_between_excl (cdr pattern) (cons partial_pattern (car pattern))))
 	)
 )
 ; maybe have pattern doing the same thing just so match can be called afterwards again
-(defun check_list (partial_pattern assertion)
+(defun check_list (pattern pattern_dup partial_pattern partial_dup assertion assertion_dup)
+	(print partial_pattern)
 	(cond
 		; Successfully got through whole partial pattern, match?
-		((endp partial_pattern) t)
+		((endp partial_pattern) (match (pattern assertion)))
 		; If assertion < partial pattern, never found a match
 		((< (length assertion) (length partial_pattern)) nil)
 		; First strings of both match so go to next of both
-		((string= (first partial_pattern) (first assertion)) (check_list (cdr partial_pattern) (cdr assertion)))
+		((string= (first partial_pattern) (first assertion)) (check_list (cdr pattern) pattern_dup (cdr partial_pattern) partial_dup (cdr assertion) assertion_dup))
 		; First strings not equal so escape back to either end or restart with statement below, moving assertion ahead
-		((string/= (first partial_pattern) (first assertion)) nil)
-		((and (>= (length assertion) (length partial_pattern)) nil) (check_list partial_pattern (cdr assertion)))
+		; ((string/= (first partial_pattern) (first assertion)) nil)
+		; and (>= (length assertion) (length partial_pattern))
+		((string/= (first partial_pattern) (first assertion)) (check_list pattern_dup pattern_dup partial_dup partial_dup (cdr assertion_dup) assertion_dup))
 	)
 
 )
@@ -116,7 +121,7 @@ Keep length in mind
 		; Asterisk checking if ! near
 
 		; Normal ! checking
-		((string= (first pattern) "!") (exclamation (cdr pattern) assertion))
+		((string= (first pattern) "!") (check_list pattern pattern (get_list_between_excl (cdr pattern) nil) (get_list_between_excl (cdr pattern) nil) assertion assertion))
 		; Normal checking of strings, recurses to next place in both lists
 		((string= (first pattern) (first assertion)) (match (cdr pattern) (cdr assertion)))
 		; If strings not equal in normal check, returns nil
@@ -127,13 +132,13 @@ Keep length in mind
 ; (print (match '(apple2 banana) '(apple2 banana)))
 
 ; Test cases
-(print (match '(color apple red) '(color apple red))) ;t
-(print (match '(color apple red) '(color apple green))) ;nil
-(print (match '(! table !) '(this table supports a bloc))) ;t
-(print (match '(this table !) '(this table supports a bloc))) ;t
-(print (match '(! brown) '(green red brown yellow))) ;nil
-(print (match '(! brown) '(green red brown brown))) ;t
-(print (match '(red green ! blue) '(red green blue))) ;t
+; (print (match '(color apple red) '(color apple red))) ;t
+; (print (match '(color apple red) '(color apple green))) ;nil
+; ; (print (match '(! table !) '(this table supports a bloc))) ;t
+; (print (match '(this table !) '(this table supports a bloc))) ;t
+; (print (match '(! brown) '(green red brown yellow))) ;nil
+; (print (match '(! brown) '(green red brown brown))) ;t
+; (print (match '(red green ! blue) '(red green blue))) ;t
 ; (print (match '(red gr*n blue) '(red green blue))) ; t
 ; (print (match '(t* table is *n) '(this table is blue))) ; nil
 ; (print (match '(color apple *) '(color apple red))) ;t
@@ -144,7 +149,6 @@ Keep length in mind
 (print (match '(! table orange !) '(this table is table orange rock))) ;t
 
 ; (print (find 'table '(this table is table orange rock)))
-; Have helper for asterisk, so like if statement in match
-; Have helper for exclamation
+
 
 
