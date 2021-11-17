@@ -14,7 +14,6 @@
 		((string= (first pattern) (nth 1 pattern)) (assertion_check (cdr pattern) assertion assertion_dup))
 		((string/= (first pattern) (first assertion)) (assertion_check pattern (cdr assertion) assertion_dup))
 		((string= (first pattern) (first assertion)) (assertion_check pattern (cdr assertion) assertion))
-		; ((and (<= (length pattern) (length assertion))(string= (first pattern) (first assertion))) (assertion_check pattern (cdr assertion) assertion))
 	)
 )
 
@@ -32,9 +31,9 @@
 )
 
 ; add optional substring index
-(defun determine_if_asterisks (test_string)
+(defun determine_if_asterisks (test_string &optional (substring_index 0))
 	; (print 4)
-	(if (find #\* (string test_string))
+	(if (find #\* (subseq (string test_string) substring_index))
 		t
 		nil
 	)
@@ -50,40 +49,64 @@
 
 ;asterisk string comes from pattern, test_string comes from assertion
 (defun asterisk (pattern assertion &optional (index 0) (assert_index 0))
-	(print 50)
-	(print pattern)
-	(print assertion)
-	(print index)
-	(print assert_index)
+	; (print 50)
+	; (print pattern)
+	; (print assertion)
+	; (print index)
+	; (print assert_index)
 	(cond
 		; pattern string ends with * i.e. x*, return t since they match
 		((eql assertion "NIL") nil)
 		((and (eql index (length pattern)) (eql assert_index (length assertion))) t)
 		((and (eql index (length pattern)) (not (eql assert_index (length assertion)))) nil)
-		((eql assert_index (length assertion)) nil)
 		((and (char= (char pattern index) #\*) (eql index (- (length pattern) 1))) t)
-		; equivalent chars so go next
-		((char= (char pattern index) (char assertion assert_index)) (asterisk pattern assertion (+ index 1) (+ assert_index 1)))
 		; two subsequent *s so go next NEED TWO INDEXES?
 		((and (char= (char pattern index) #\*) (char= (char pattern (+ index 1)) #\*)) (asterisk pattern assertion (+ index 1) assert_index))
-		; char is * so helper function?
-		((char= (char pattern index) #\*) (asterisk_helper pattern (char pattern (+ index 1)) assertion (+ index 1) assert_index))
+		((eql assert_index (length assertion)) nil)
+		
+		; equivalent chars so go next
+		((char= (char pattern index) (char assertion assert_index)) (asterisk pattern assertion (+ index 1) (+ assert_index 1)))
+		
+		; char is * so helper function? //FIX, use determine asterisks
+		((char= (char pattern index) #\*) (if (determine_if_asterisks pattern (+ index 1)) 
+			(asterisk_helper_more pattern assertion (+ index 1) (+ index 1) assert_index assert_index)
+			(asterisk_helper pattern assertion (+ index 1) (+ index 1) assert_index assert_index)
+		))
 		((char/= (char pattern index) (char assertion assert_index)) nil)
 	)
 )
 
-(defun asterisk_helper (pattern pattern_char assertion index assert_index)
-	(print 60)
-	(print pattern)
-	(print pattern_char)
-	(print assertion)
-	(print index)
-	(print assert_index)
+(defun asterisk_helper (pattern assertion index index_dup assert_index assert_index_dup)
+	; (print 60)
+	; (print pattern)
+	; (print assertion)
+	; (print index)
+	; (print index_dup)
+	; (print assert_index)
+	; (print assert_index_dup)
 	(cond
-		((eql assert_index (length assertion)) nil)
-		((char= pattern_char (char pattern (+ index 1))) (asterisk_helper pattern pattern_char assertion (+ index 1) assert_index))
-		((char= pattern_char (char assertion assert_index)) (asterisk pattern assertion (+ index 1) (+ assert_index 1)))
-		((char/= pattern_char (char assertion assert_index)) (asterisk_helper pattern pattern_char assertion index (+ assert_index 1)))
+		((and (eql index (length pattern)) (eql assert_index (length assertion))) (asterisk pattern assertion index assert_index))
+		; ((char= (char pattern index) (char pattern (+ index 1))) (asterisk_helper pattern assertion (+ index 1) assert_index))
+		((and (and (eql (+ index 1) (length pattern)) (not (eql (+ assert_index 1) (length assertion)))) (char= (char pattern index) (char assertion assert_index))) 
+		(asterisk_helper pattern assertion index index_dup (+ assert_index 1) assert_index_dup))
+		((char= (char pattern index) (char assertion assert_index)) (asterisk_helper pattern assertion (+ index 1) index_dup (+ assert_index 1) assert_index_dup))
+		((char/= (char pattern index) (char assertion assert_index)) (asterisk_helper pattern assertion index_dup index_dup (+ assert_index_dup 1) (+ assert_index_dup 1)))
+	)
+)
+
+(defun asterisk_helper_more (pattern assertion index index_dup assert_index assert_index_dup)
+	; (print 80)
+	; (print pattern)
+	; (print assertion)
+	; (print index)
+	; (print index_dup)
+	; (print assert_index)
+	; (print assert_index_dup)
+	(cond
+		((and (eql assert_index (length assertion)) (char/= (char pattern index) #\*)) nil)
+		((char= (char pattern index) #\*) (asterisk pattern assertion index assert_index))
+		((char= (char pattern index) (char assertion assert_index)) (asterisk_helper_more pattern assertion (+ index 1) index_dup (+ assert_index 1) assert_index_dup))
+		((char/= (char pattern index) (char assertion assert_index)) (asterisk_helper_more pattern assertion index_dup index_dup (+ assert_index_dup 1) (+ assert_index_dup 1)))
 	)
 )
 
@@ -162,28 +185,29 @@
 ; (print (match '(! bear bear) '(bear bear bear bear bear))) ;t
 ; (print (match '(cone old lock odor rock ! rock rock egg dead) '(cone old lock odor rock rock rock rock egg dead))) ;t
 ; (print (match '(cone old lock odor rock ! ! ! rock egg ! ! ! dead rock egg) '(cone old lock odor rock rock egg big big rock egg big big king egg big big cone dead rock egg))) ;t
+; (print (match '(! rock ! table) '(bark roar rock table table table))) ;t
 
 ;;;Failing
 ; (print (match '(! ! * benson * ! ! *) '(hamburger delta there benson is is))) ;t
 ; (print (match '(color ! **a*ple red) '(color apple red))) ;t
 
 ;;;* cases
-; (print (match '(color*rred) '(colorrrred))) ;t ---
+; (print (match '(color*rred) '(colorrrred))) ;t
 ; (print (match '(color*d) '(colord))) ;t 
 ; (print (match '(color***re***d) '(colorred))) ;t
 ; (print (match '(color***re***d) '(colorrebbbcd))) ;t
 ; (print (match '(color***re***dre) '(colorrebbbcdre))) ;t
 ; (print (match '(color***re***d) '(colorred))) ;t
-; (print (match '(color***re***d) '(colorrrrreddd))) ;t ----
-; (print (match '(color***re***d) '(colorrererereddd))) ;t  ----
+; (print (match '(color***re***d) '(colorrrrreddd))) ;t
+; (print (match '(color***re***d) '(colorrererereddd))) ;t 
 ; (print (match '(color***re***dre) '(colorrebbrebbkebbcdre))) ;t
-; (print (match '(color*re) '(colorredre))) ;t ----
+; (print (match '(color*re) '(colorredre))) ;t 
 ; (print (match '(bl*ue*ueueue) '(blueueueue))) ;t
 ; (print (match '(bl*ue*ueueue) '(blapppppueueueue))) ;t
 ; (print (match '(bl*ue*ueueue) '(bluemmmueueue))) ;t
 
 ; (print (match '(color**red) '(colorred))) ;t 
-; (print (match '(color**) '(color))) ;t ----
+; (print (match '(color**) '(color))) ;t 
 ; (print (match '(***color**) '(colorr))) ;t 
 ; (print (match '(***color**) '(colorabceere))) ;t
 ; (print (match '(bl*ue*) '(blccueecueu))) ;t
@@ -191,7 +215,7 @@
 ; (print (match '(*****) '(a))) ;t
 ; (print (match '(*** **) '(a c))) ;t
 
-; (print (match '(color*rred) '(colorcrrrcd))) ;nil
+(print (match '(color*rred) '(colorcrrrcd))) ;nil
 ; (print (match '(color***re***d) '(colorbbbcdre))) ;nil
 ; (print (match '(color***re***dre) '(colorbbbcdre))) ;nil
 ; (print (match '(color*re) '(colorredbe))) ;nil 
