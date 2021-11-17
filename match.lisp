@@ -6,11 +6,12 @@
 	; (print assertion_dup)
 	(cond
 		((endp assertion) (match pattern assertion_dup))
-		; ((eql (determine_if_asterisks (first pattern)) t) 
-		; 	(if (asterisk (string (first pattern)) (string (first assertion)))
-		; 		(assertion_check pattern (cdr assertion) assertion)
-		; 		nil
-		; 	))
+		((pure_asterisks (string (first pattern))) (assertion_check (cdr pattern) (cdr assertion) (cdr assertion)))
+		((eql (determine_if_asterisks (first pattern)) t) 
+			(if (asterisk (string (first pattern)) (string (first assertion)))
+				(assertion_check (cdr pattern) (cdr assertion) assertion)
+				nil
+		))
 		((string= (first pattern) (nth 1 pattern)) (assertion_check (cdr pattern) assertion assertion_dup))
 		((string/= (first pattern) (first assertion)) (assertion_check pattern (cdr assertion) assertion_dup))
 		((string= (first pattern) (first assertion)) (assertion_check pattern (cdr assertion) assertion))
@@ -25,6 +26,12 @@
 	(cond
 		((and (null assertion) (string/= (first pattern) "!")) nil)
 		((string= (first pattern) "!") (match pattern assertion))
+		((pure_asterisks (string (first pattern))) (assertion_check_more (cdr pattern) pattern_dup (cdr assertion)))
+		((eql (determine_if_asterisks (first pattern)) t) 
+			(if (asterisk (string (first pattern)) (string (first assertion)))
+				(assertion_check_more (cdr pattern) pattern_dup (cdr assertion))
+				nil
+		))
 		((string= (first pattern) (first assertion)) (assertion_check_more (cdr pattern) pattern_dup (cdr assertion)))
 		((string/= (first pattern) (first assertion)) (assertion_check_more pattern_dup pattern_dup (cdr assertion)))
 	)
@@ -133,7 +140,7 @@
 		; Two subsequent !s, in which the first one will not matter
 		((and (string= (first pattern) "!") (string= (nth 1 pattern) "!")) (match (cdr pattern) assertion))
 		; Asterisk checking if ! near, might get rid of this
-		((and (string= (first pattern) "!") (string= (nth 1 pattern) "*")) (match (cdr pattern) assertion))
+		; ((and (string= (first pattern) "!") (string= (nth 1 pattern) "*")) (match (cdr pattern) assertion))
 		; Asterisk checking if standing alone
 		((and (pure_asterisks (string (first pattern))) (not (null assertion))) (match (cdr pattern) (cdr assertion)))
 		((and (pure_asterisks (string (first pattern))) (null assertion)) nil)
@@ -169,7 +176,7 @@
 ; (print (match '(! table orange !) '(this table is table orange rock))) ;t
 ; (print (match '(! table orange) '(this table is table orange table orange))) ;t
 ; (print (match '(! table orange) '(this table is table orange table))) ;nil
-; (print (match '(color ! * red) '(color apple red))) ;t
+; (print (match '(color ! * red) '(color apple red))) ;t ---
 ; (print (match '(color apple *) '(color apple red))) ;t
 ; (print (match '(color * red) '(color apple red))) ;t
 ; (print (match '(color * red) '(color apple green))) ;nil
@@ -191,15 +198,18 @@
 ; (print (match '(** ****** * *) '(i am a pirate))) ;t
 ; (print (match '(apple * red) '(apple red))) ;nil
 
-; (print (match '(color ! apple ! ! apple ! * red) '(color apple apple red))) ;nil
+; (print (match '(color ! apple ! ! apple ! * red) '(color apple apple red))) ;nil 
 ; (print (match '(! bear bear) '(bear bear bear bear bear))) ;t
 ; (print (match '(cone old lock odor rock ! rock rock egg dead) '(cone old lock odor rock rock rock rock egg dead))) ;t
 ; (print (match '(cone old lock odor rock ! ! ! rock egg ! ! ! dead rock egg) '(cone old lock odor rock rock egg big big rock egg big big king egg big big cone dead rock egg))) ;t
 ; (print (match '(! rock ! table) '(bark roar rock table table table))) ;t
 ; (print (match '(color ! **a*ple red) '(color apple red))) ;t
+; (print (match '(color ! **a*ple ! red) '(color apple red))) ;t
+
+; (print (match '(! ! * benson * ! ! *) '(hamburger delta there benson is is))) ;t 
+
 
 ;;;Failing
-; (print (match '(! ! * benson * ! ! *) '(hamburger delta there benson is is))) ;t
 
 
 ;;;* cases
@@ -243,3 +253,13 @@
 ; (print (match '(color**red) '(color))) ;nil
 ; (print (match '(**pp**color**) '(colorr))) ;nil
 ; (print (match '(* **) '(c))) ;nil
+; (print (match '(*g*nas*n) '(agbbbnabscccn))) ;nil
+; (print (match '(*nas*n) '(nabsn))) ;nil 
+
+; (print (match '(! brown) '(green red brown brown))) ;t
+; (print (match '(! brown green !) '(brown green red brown brown green brown))) ;t
+
+; (print (match '(*brown) '(brown))) ;t
+; (print (match '(brown*) '(brown))) ;t
+; (print (match '(brown**) '(brown))) ;t
+; (print (match '(*brown***  *g*n*) '(brown  green))) ;t
