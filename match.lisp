@@ -39,14 +39,16 @@
 
 ;asterisk string comes from pattern, test_string comes from assertion
 (defun asterisk (pattern assertion &optional (index 0) (assert_index 0))
-	; (print 5)
+	; (print 50)
 	; (print pattern)
 	; (print assertion)
 	; (print index)
 	; (print assert_index)
 	(cond
 		; pattern string ends with * i.e. x*, return t since they match
-		((eql index (length pattern)) t)
+		((eql assertion "NIL") nil)
+		((and (eql index (length pattern)) (eql assert_index (length assertion))) t)
+		((and (eql index (length pattern)) (not (eql assert_index (length assertion)))) nil)
 		((eql assert_index (length assertion)) nil)
 		((and (char= (char pattern index) #\*) (eql index (- (length pattern) 1))) t)
 		; equivalent chars so go next
@@ -60,7 +62,7 @@
 )
 
 (defun asterisk_helper (pattern pattern_char assertion index assert_index)
-	; (print 6)
+	; (print 60)
 	; (print pattern)
 	; (print pattern_char)
 	; (print assertion)
@@ -156,9 +158,9 @@
 ; (print (match '(color***re***dre) '(colorrebbbcdre))) ;t
 ; (print (match '(color***re***d) '(colorred))) ;t
 ; (print (match '(color***re***d) '(colorrrrreddd))) ;t ----
-; (print (match '(color***re***d) '(colorrererereddd))) ;t 
+; (print (match '(color***re***d) '(colorrererereddd))) ;t  ----
 ; (print (match '(color***re***dre) '(colorrebbrebbkebbcdre))) ;t
-; (print (match '(color*re) '(colorredre))) ;t
+; (print (match '(color*re) '(colorredre))) ;t ----
 ; (print (match '(bl*ue*ueueue) '(blueueueue))) ;t
 ; (print (match '(bl*ue*ueueue) '(blapppppueueueue))) ;t
 ; (print (match '(bl*ue*ueueue) '(bluemmmueueue))) ;t
@@ -175,8 +177,8 @@
 ; (print (match '(color*rred) '(colorcrrrcd))) ;nil
 ; (print (match '(color***re***d) '(colorbbbcdre))) ;nil
 ; (print (match '(color***re***dre) '(colorbbbcdre))) ;nil
-; (print (match '(color*re) '(colorredbe))) ;nil ----
-; (print (match '(color***re***d) '(colorredre))) ;nil ----
+; (print (match '(color*re) '(colorredbe))) ;nil 
+; (print (match '(color***re***d) '(colorredre))) ;nil 
 ; (print (match '(color***re**re*d) '(colorredre))) ;nil 
 ; (print (match '(color***re***dre) '(colorebbbcdre))) ;nil
 ; (print (match '(color*rred) '(colorrrrede))) ;nil
