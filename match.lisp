@@ -6,6 +6,11 @@
 	; (print assertion_dup)
 	(cond
 		((endp assertion) (match pattern assertion_dup))
+		; ((eql (determine_if_asterisks (first pattern)) t) 
+		; 	(if (asterisk (string (first pattern)) (string (first assertion)))
+		; 		(assertion_check pattern (cdr assertion) assertion)
+		; 		nil
+		; 	))
 		((string/= (first pattern) (first assertion)) (assertion_check pattern (cdr assertion) assertion_dup))
 		((string= (first pattern) (first assertion)) (assertion_check pattern (cdr assertion) assertion))
 		; ((and (<= (length pattern) (length assertion))(string= (first pattern) (first assertion))) (assertion_check pattern (cdr assertion) assertion))
@@ -23,6 +28,7 @@
 	)
 )
 
+; add optional substring index
 (defun determine_if_asterisks (test_string)
 	; (print 4)
 	(if (find #\* (string test_string))
@@ -34,6 +40,10 @@
 ;asterisk string comes from pattern, test_string comes from assertion
 (defun asterisk (pattern assertion &optional (index 0) (assert_index 0))
 	; (print 5)
+	; (print pattern)
+	; (print assertion)
+	; (print index)
+	; (print assert_index)
 	(cond
 		; pattern string ends with * i.e. x*, return t since they match
 		((eql index (length pattern)) t)
@@ -51,6 +61,11 @@
 
 (defun asterisk_helper (pattern pattern_char assertion index assert_index)
 	; (print 6)
+	; (print pattern)
+	; (print pattern_char)
+	; (print assertion)
+	; (print index)
+	; (print assert_index)
 	(cond
 		((eql assert_index (length assertion)) nil)
 		((char= pattern_char (char assertion assert_index)) (asterisk pattern assertion (+ index 1) (+ assert_index 1)))
@@ -60,7 +75,6 @@
 
 
 (defun match (pattern assertion)
-	; This is just to show that it works when there's no quotations
 	; (print 1)
 	; (print pattern)
 	; (print assertion)
@@ -77,6 +91,7 @@
 		((and (string= (first pattern) "!") (string= (nth 1 pattern) "*")) (match (cdr pattern) assertion))
 		; Asterisk checking if standing alone
 		((and (string= (first pattern) "*") (not (null assertion))) (match (cdr pattern) (cdr assertion)))
+		((and (string= (first pattern) "*") (null assertion)) nil)
 		; Normal asterisk checking
 		((eql (determine_if_asterisks (first pattern)) t) 
 			(if (asterisk (string (first pattern)) (string (first assertion)))
@@ -125,11 +140,52 @@
 ; (print (match '(red gr*n blue) '(red green blue))) ; t
 ; (print (match '(t* table is *n) '(this table is blue))) ; nil
 ; (print (match '(** ****** * *) '(i am a pirate))) ;t
-
+; (print (match '(apple * red) '(apple red))) ;nil
+; (print (match '(color ! apple ! ! apple ! * red) '(color apple apple red))) ;nil
 
 ;;;Failing
 ; (print (match '(! bear bear) '(bear bear bear bear bear))) ;t
 ; (print (match '(! ! * benson * ! ! *) '(hamburger delta there benson is is))) ;t
+; (print (match '(color ! **a*ple red) '(color apple red))) ;t
 
+;;;* cases
+; (print (match '(color*rred) '(colorrrred))) ;t ---
+; (print (match '(color*d) '(colord))) ;t 
+; (print (match '(color***re***d) '(colorred))) ;t
+; (print (match '(color***re***d) '(colorrebbbcd))) ;t
+; (print (match '(color***re***dre) '(colorrebbbcdre))) ;t
+; (print (match '(color***re***d) '(colorred))) ;t
+; (print (match '(color***re***d) '(colorrrrreddd))) ;t ----
+; (print (match '(color***re***d) '(colorrererereddd))) ;t 
+; (print (match '(color***re***dre) '(colorrebbrebbkebbcdre))) ;t
+; (print (match '(color*re) '(colorredre))) ;t
+; (print (match '(bl*ue*ueueue) '(blueueueue))) ;t
+; (print (match '(bl*ue*ueueue) '(blapppppueueueue))) ;t
+; (print (match '(bl*ue*ueueue) '(bluemmmueueue))) ;t
 
+; (print (match '(color**red) '(colorred))) ;t 
+; (print (match '(color**) '(color))) ;t ----
+; (print (match '(***color**) '(colorr))) ;t 
+; (print (match '(***color**) '(colorabceere))) ;t
+; (print (match '(bl*ue*) '(blccueecueu))) ;t
+; (print (match '(***bl*ue*) '(blccueecueu))) ;t
+; (print (match '(*****) '(a))) ;t
+; (print (match '(*** **) '(a c))) ;t
 
+; (print (match '(color*rred) '(colorcrrrcd))) ;nil
+; (print (match '(color***re***d) '(colorbbbcdre))) ;nil
+; (print (match '(color***re***dre) '(colorbbbcdre))) ;nil
+; (print (match '(color*re) '(colorredbe))) ;nil ----
+; (print (match '(color***re***d) '(colorredre))) ;nil ----
+; (print (match '(color***re**re*d) '(colorredre))) ;nil 
+; (print (match '(color***re***dre) '(colorebbbcdre))) ;nil
+; (print (match '(color*rred) '(colorrrrede))) ;nil
+; (print (match '(color*rrd) '(colorrrred))) ;nil
+; (print (match '(color*eeerrrd) '(colorerrrd))) ;nil
+; (print (match '(color*red) '(colored))) ;nil
+; (print (match '(bl*ue*ueueue) '(blueueu))) ;nil
+; (print (match '(bl*ue*ueueue) '(blccueecueu))) ;nil
+
+; (print (match '(color**red) '(color))) ;nil
+; (print (match '(**pp**color**) '(colorr))) ;nil
+; (print (match '(* **) '(c))) ;nil ----
