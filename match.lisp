@@ -11,6 +11,7 @@
 		; 		(assertion_check pattern (cdr assertion) assertion)
 		; 		nil
 		; 	))
+		((string= (first pattern) (nth 1 pattern)) (assertion_check (cdr pattern) assertion assertion_dup))
 		((string/= (first pattern) (first assertion)) (assertion_check pattern (cdr assertion) assertion_dup))
 		((string= (first pattern) (first assertion)) (assertion_check pattern (cdr assertion) assertion))
 		; ((and (<= (length pattern) (length assertion))(string= (first pattern) (first assertion))) (assertion_check pattern (cdr assertion) assertion))
@@ -145,8 +146,10 @@
 ; (print (match '(apple * red) '(apple red))) ;nil
 ; (print (match '(color ! apple ! ! apple ! * red) '(color apple apple red))) ;nil
 
+
 ;;;Failing
 ; (print (match '(! bear bear) '(bear bear bear bear bear))) ;t
+; (print (match '(cone old lock odor rock ! rock rock egg dead) '(cone old lock odor rock rock rock rock egg dead))) ;t
 ; (print (match '(! ! * benson * ! ! *) '(hamburger delta there benson is is))) ;t
 ; (print (match '(color ! **a*ple red) '(color apple red))) ;t
 
